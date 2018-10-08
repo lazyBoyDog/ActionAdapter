@@ -7,7 +7,6 @@
 //
 
 #import "ZHActionAdapter.h"
-#import <objc/runtime.h>
 #import <pthread.h>
 
 // 用来监听对象释放的时机
@@ -153,7 +152,8 @@ typedef void(^ZHActionBlock)(id user,NSDictionary *info);
         index ++;
     }
     if (self.userInfo) {
-        [invocation setArgument:(__bridge void * _Nonnull)(self.userInfo) atIndex:index];
+        NSDictionary *paramter = self.userInfo;
+        [invocation setArgument:&paramter atIndex:index];
     }
     if (queue) {
         [queue addOperation:[[NSInvocationOperation alloc] initWithInvocation:invocation]];
@@ -262,7 +262,7 @@ typedef void(^ZHActionBlock)(id user,NSDictionary *info);
 }
 
 + (void)zh_sendMessageKey:(NSString *)key userInfo:(NSDictionary *)aUserInfo {
-    [self zh_sendMessageKey:key userInfo:aUserInfo];
+    [self zh_sendMessageKey:key user:nil userInfo:aUserInfo];
 }
 
 + (void)zh_sendMessageKey:(NSString *)key user:(id)user userInfo:(NSDictionary *)aUserInfo {

@@ -38,6 +38,26 @@
         NextViewController *next = [[NextViewController alloc] init];
         [self presentViewController:next animated:YES completion:nil];
     }];
+    
+    
+    UIButton *loginBtn = [[UIButton alloc] initWithFrame:CGRectMake(100, 350, 60, 35)];
+    [loginBtn setTitle:@"登陆" forState:UIControlStateNormal];
+    [loginBtn setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+    [loginBtn addTarget:self action:@selector(loginBtnClick) forControlEvents:UIControlEventTouchDown];
+    [self.view addSubview:loginBtn];
+    
+
+    // SEL方式接收事件
+//    [ZHActionAdapter zh_receiveMessageKey:@"kLoginControllerLoginAction" target:self
+//                                 selector:@selector(loginWithParamter:)];
+//
+    // Block方式接收事件
+    [ZHActionAdapter zh_receiveMessageKey:@"kLoginControllerLoginAction" target:self
+                               usingBlock:^(id user, NSDictionary *info) {
+                                   NSLog(@"登陆成功");
+
+                               }];
+    
 }
 
 - (void)didTapGreenBtnAction:(UIButton *)btn {
@@ -58,6 +78,26 @@
     CFAbsoluteTime linkTime = (CFAbsoluteTimeGetCurrent() - startTime);
     NSLog(@"Linked in %f ms", linkTime *1000.0);
 }
+
+- (void)loginBtnClick {
+//    ZH_ActionAdapterSend(@"kLoginControllerLoginAction",@"zhouhui",@"dashen");
+    
+    // 发送事件
+    [ZHActionAdapter zh_sendMessageKey:@"kLoginControllerLoginAction"
+                              userInfo:@{@"name": @"zhouhui",
+                                        @"pwd" : @"asdfghhj"}];
+    
+}
+
+- (void)loginWithParamter:(NSDictionary *)paramter {
+    NSLog(@"--%@", paramter);
+}
+
+
+- (void)loginWithName:(NSString *)name password:(NSString *)password {
+    NSLog(@"name:%@, pwd:%@", name, password);
+}
+
 
 - (void)mainQueueClick {
     NSLog(@"-CURRENT-QUEUE:%@",[NSOperationQueue currentQueue]);
