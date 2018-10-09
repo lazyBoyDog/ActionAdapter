@@ -9,8 +9,60 @@
 #import "ViewController.h"
 #import "ZHActionAdapter.h"
 #import "NextViewController.h"
+#import "ZHSimpleRouteAdapter.h"
 
-@interface ViewController ()
+@interface ZHCustomCell : UITableViewCell
+
+@property (nonatomic, strong) UIButton *alertBtn1;
+@property (nonatomic, strong) UIButton *alertBtn2;
+@property (nonatomic, strong) UIButton *jumpBtn;
+
+@end
+
+
+@implementation ZHCustomCell
+
+- (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
+    if (self = [super initWithStyle:style reuseIdentifier:reuseIdentifier]) {
+        self.alertBtn1 = [self btnWithTitle:@"测试1" frame:CGRectMake(15, 10, 50, 30)
+                                     action:@selector(alertTest1:)];
+        self.alertBtn2 = [self btnWithTitle:@"测试2" frame:CGRectMake(70, 10, 50, 30)
+                                     action:@selector(alertTest2:)];
+        self.jumpBtn = [self btnWithTitle:@"跳转" frame:CGRectMake(100, 40, 50, 30)
+                                   action:@selector(jumpToNext)];
+        
+    }
+    return self;
+}
+
+- (UIButton *)btnWithTitle:(NSString *)title frame:(CGRect)frame action:(SEL)selector {
+    UIButton *btn = [[UIButton alloc] initWithFrame:frame];
+    [btn setTitle:title forState:UIControlStateNormal];
+    [btn setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+    [btn addTarget:self action:selector forControlEvents:UIControlEventTouchDown];
+    [self.contentView addSubview:btn];
+    return btn;
+}
+
+- (void)alertTest1:(UIButton *)btn {
+    ZH_ActionAdapterSend(@"kViewControllerAlert1Action", btn.titleLabel.text);
+}
+
+- (void)alertTest2:(UIButton *)btn {
+    [ZHActionAdapter zh_sendMessageKey:@"kViewControllerAlert2Action"
+                                  user:btn
+                              userInfo:@{@"text" : @"我就是试试"}];
+}
+
+- (void)jumpToNext {
+    [ZHActionAdapter zh_sendMessageKey:@"kViewControllerJumpAction"
+                              userInfo:@{@"id" : @"1234567"}];
+}
+
+@end
+
+
+@interface ViewController () <UITableViewDelegate, UITableViewDataSource>
 
 @property (nonatomic, strong) UITableView *tableView;
 
@@ -20,87 +72,50 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    UIButton *action = [[UIButton alloc] initWithFrame:CGRectMake(50, 150, 50, 30)];
-    [action setBackgroundColor:[UIColor redColor]];
-    [action addTarget:self
-               action:@selector(didTapRedBtnAction:)
-     forControlEvents:UIControlEventTouchDown];
-    [self.view addSubview:action];
-    
-    UIButton *action1 = [[UIButton alloc] initWithFrame:CGRectMake(250, 150, 50, 30)];
-    [action1 setBackgroundColor:[UIColor greenColor]];
-    [action1 addTarget:self
-               action:@selector(didTapGreenBtnAction:)
-     forControlEvents:UIControlEventTouchDown];
-    [self.view addSubview:action1];
+    self.tableView = ({
+        UITableView *table = [[UITableView alloc] initWithFrame:self.view.bounds];
+        [table registerClass:[ZHCustomCell class] forCellReuseIdentifier:@"ZHCustomCell"];
+        table.delegate = self;
+        table.dataSource = self;
+        table;
+    });
+    [self.view addSubview:self.tableView];
+    [self receiveActions];
+}
+
+- (void)receiveActions {
+    ZH_ActionAdapterReceive(@"kViewControllerAlert1Action", @selector(alert1Action:));
+    [ZHActionAdapter zh_receiveMessageKey:@"kViewControllerAlert2Action"
+                                   target:self
+                                 selector:@selector(alert2ActionFromBtn:paramter:)];
     
     [ZHActionAdapter zh_receiveMessageKey:@"kViewControllerJumpAction" target:self usingBlock:^(id user, NSDictionary *info) {
-        NextViewController *next = [[NextViewController alloc] init];
-        [self presentViewController:next animated:YES completion:nil];
+        NSLog(@"跳转调用-user %@--info %@", user, info);
+        UIViewController *vc = [[ZHSimpleRouteAdapter shareInstance] zh_getViewControllerOrderByParamtersWithUrl:@"login://mymy/login?name=123&password=asdaas"];
+        [self presentViewController:vc animated:YES completion:nil];
     }];
-    
-    
-    UIButton *loginBtn = [[UIButton alloc] initWithFrame:CGRectMake(100, 350, 60, 35)];
-    [loginBtn setTitle:@"登陆" forState:UIControlStateNormal];
-    [loginBtn setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
-    [loginBtn addTarget:self action:@selector(loginBtnClick) forControlEvents:UIControlEventTouchDown];
-    [self.view addSubview:loginBtn];
-    
-
-    // SEL方式接收事件
-//    [ZHActionAdapter zh_receiveMessageKey:@"kLoginControllerLoginAction" target:self
-//                                 selector:@selector(loginWithParamter:)];
-//
-    // Block方式接收事件
-    [ZHActionAdapter zh_receiveMessageKey:@"kLoginControllerLoginAction" target:self
-                               usingBlock:^(id user, NSDictionary *info) {
-                                   NSLog(@"登陆成功");
-
-                               }];
-    
 }
 
-- (void)didTapGreenBtnAction:(UIButton *)btn {
-    CFAbsoluteTime starTime =CFAbsoluteTimeGetCurrent();
-    NextViewController *next = [[NextViewController alloc] init];
-    [self presentViewController:next animated:YES completion:nil];
-    CFAbsoluteTime linTime = (CFAbsoluteTimeGetCurrent() - starTime);
-    NSLog(@"Linked in %f ms", linTime *1000.0);
+- (void)alert1Action:(NSString *)alert {
+    NSLog(@"测试1调用--%@",alert);
+}
+
+- (void)alert2ActionFromBtn:(UIButton *)btn paramter:(NSDictionary *)paramter {
+    NSLog(@"测试2调用--user：%@ , paramter:%@",btn, paramter);
 }
 
 
-- (void)didTapRedBtnAction:(UIButton *)btn {
-    
-    CFAbsoluteTime startTime =CFAbsoluteTimeGetCurrent();
-//    dispatch_async(dispatch_get_global_queue(0, 0), ^{
-       [ZHActionAdapter zh_sendMessageKey:@"kViewControllerJumpAction" user:btn];
-//    });
-    CFAbsoluteTime linkTime = (CFAbsoluteTimeGetCurrent() - startTime);
-    NSLog(@"Linked in %f ms", linkTime *1000.0);
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return 70;
 }
 
-- (void)loginBtnClick {
-//    ZH_ActionAdapterSend(@"kLoginControllerLoginAction",@"zhouhui",@"dashen");
-    
-    // 发送事件
-    [ZHActionAdapter zh_sendMessageKey:@"kLoginControllerLoginAction"
-                              userInfo:@{@"name": @"zhouhui",
-                                        @"pwd" : @"asdfghhj"}];
-    
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return 50;
 }
 
-- (void)loginWithParamter:(NSDictionary *)paramter {
-    NSLog(@"--%@", paramter);
-}
-
-
-- (void)loginWithName:(NSString *)name password:(NSString *)password {
-    NSLog(@"name:%@, pwd:%@", name, password);
-}
-
-
-- (void)mainQueueClick {
-    NSLog(@"-CURRENT-QUEUE:%@",[NSOperationQueue currentQueue]);
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    ZHCustomCell *cell = [tableView dequeueReusableCellWithIdentifier:@"ZHCustomCell" forIndexPath:indexPath];
+    return cell;
 }
 
 - (void)didReceiveMemoryWarning {

@@ -22,41 +22,21 @@
 
 @end
 
-//ZHRouteRegister("login://mymy/login", "NextViewController.loginWithParamters:")
 ZHRouteRegister("login://mymy/login", "NextViewController.loginWithName:password:")
 
 @implementation NextViewController
 
 + (UIViewController *)loginWithName:(NSString *)name password:(NSString *)password {
     NextViewController *vc = [[NextViewController alloc] init];
-    NSLog(@"--%@", vc);
+    vc.view.backgroundColor = [UIColor lightGrayColor];
     return vc;
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    UIViewController *vc = [[ZHSimpleRouteAdapter shareInstance] zh_getViewControllerOrderByParamtersWithUrl:@"login://mymy/login?name=123&password=asdaas"];
-    NSLog(@"获取到的VC 是 = %@", vc);
 }
 
-+ (UIViewController *)loginWithParamters:(NSDictionary *)paramter {
-    NextViewController *vc = [[NextViewController alloc] init];
-    NSLog(@"--%@", vc);
-    return vc;
-}
-
-
-- (void)didTapRedBtnAction:(UIButton *)btn {
-    UIButton *action = [[UIButton alloc] initWithFrame:CGRectMake(50, 150, 50, 30)];
-    [action setBackgroundColor:[UIColor redColor]];
-    [action addTarget:self
-               action:@selector(didTapRedBtnAction:)
-     forControlEvents:UIControlEventTouchDown];
-    [self.view addSubview:action];
-}
-
-- (void)didGotoPoiAddress:(NSInteger)ID poiID:(long)poiID {
-    NSLog(@"--%ld--%ld--%@", ID, poiID, [NSThread currentThread]);
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 
