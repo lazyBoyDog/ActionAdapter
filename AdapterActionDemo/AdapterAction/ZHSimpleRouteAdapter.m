@@ -81,7 +81,6 @@
         return nil;
     }
     NSString *path;
-    UIViewController *vc = nil;
     NSScanner *scanner = [NSScanner scannerWithString:url];
     BOOL result = [scanner scanUpToString:@"?" intoString:&path];
     // 成功 说明存在 query
@@ -128,10 +127,12 @@
         }
         [invocation invoke];
         if (methodSign.methodReturnLength > 0) {
+            void *vc;
             [invocation getReturnValue:&vc];
+            return (__bridge UIViewController *)vc;
         }
     }
-    return vc;
+    return nil;
 }
 
 #pragma mark - 读取内存段中的数据
